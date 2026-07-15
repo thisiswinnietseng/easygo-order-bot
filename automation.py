@@ -1,5 +1,5 @@
 """
-be2 -> EasyGo 訂購自動化核心邏輯。詳細流程與欄位對應見 SPEC.md。
+be2 -> JPH 訂購自動化核心邏輯。詳細流程與欄位對應見 SPEC.md。
 
 已用多筆真實訂單驗證過完整流程（含真的送出訂單、付款、回填 be2 憑證）。出錯時會自動存
 debug screenshot 到 /tmp/easygo-order-bot-debug/，方便比對。
@@ -71,7 +71,7 @@ async def _dismiss_modal_if_present(page):
 
 async def _fill_by_label(page, label_text, value, push=None):
     """在頁面上找文字完全等於 label_text 的葉節點，填入最近的 input/select/textarea。
-    EasyGo confirmOrder 頁是 <td class="td_title">標籤：</td><td>...<input></td> 的表格版面，
+    JPH confirmOrder 頁是 <td class="td_title">標籤：</td><td>...<input></td> 的表格版面，
     所以優先找「同一列的下一個 td」，這比找最近的 div 準確很多；找不到才退回 div-based 猜測。
 
     重要：找到的 input 是用 Playwright 的 ElementHandle.fill() 真的去打字，不是用
@@ -145,7 +145,7 @@ async def _read_by_label(page, label_text):
             const label = candidates.find(el => el.children.length === 0 && el.textContent.trim() === labelText);
             if (!label) return null;
 
-            // 版面1：EasyGo confirmOrder 那種表格，<td>標籤</td>...<td>值</td>（中間可能插隱藏 div）
+            // 版面1：JPH confirmOrder 那種表格，<td>標籤</td>...<td>值</td>（中間可能插隱藏 div）
             if (label.tagName === 'TD') {
                 let sib = label.nextElementSibling;
                 while (sib && sib.tagName !== 'TD') sib = sib.nextElementSibling;
@@ -307,7 +307,7 @@ async def check_preconditions_and_extract(page, order_id, push):
         order_id,
     )
     if note:
-        push(f'⚠️ 旅客備註有內容（{note[:30]}），但仍繼續作業，備註不會帶入 EasyGo 訂單，請事後於執行紀錄留意', 'warn')
+        push(f'⚠️ 旅客備註有內容（{note[:30]}），但仍繼續作業，備註不會帶入 JPH 訂單，請事後於執行紀錄留意', 'warn')
 
     traveler = await page.evaluate(
         """(orderId) => {
@@ -425,8 +425,8 @@ async def claim_and_mark_pending_supplier(page, order_id, push):
         result = await _click_process_step(page, order_id, step_num, label, push)
         if result == 'stuck':
             # be2 這邊狀態卡住還沒推進，若繼續跑下去會變成「be2 沒標記已訂出待供應商回覆，
-            # 但 EasyGo 那邊卻真的下單付款了」的狀態不一致，寧可中止讓人工檢查。
-            raise SkipOrder(f'「{label}」卡住無法確認完成，為避免 be2/EasyGo 狀態不一致，中止該筆')
+            # 但 JPH 那邊卻真的下單付款了」的狀態不一致，寧可中止讓人工檢查。
+            raise SkipOrder(f'「{label}」卡住無法確認完成，為避免 be2/JPH 狀態不一致，中止該筆')
 
 
 async def fill_be2_voucher(page, easygo_order_id, push):
@@ -516,10 +516,10 @@ async def mark_voucher_sent(page, order_id, push):
         raise Exception('「已寄出Voucher」按鈕被鎖住（disabled）且尚未完成，可能上一步還沒做完')
 
 
-# ── EasyGo ───────────────────────────────────────────────────────────
+# ── JPH ───────────────────────────────────────────────────────────
 
 async def login_easygo(page, username, password, push):
-    push('登入 EasyGo...')
+    push('登入 JPH...')
     await page.goto(f'{EASYGO_BASE}/#/sysHome', wait_until='networkidle', timeout=30000)
     await page.wait_for_timeout(1500)
 
@@ -543,7 +543,7 @@ async def login_easygo(page, username, password, push):
         await login_btn.click()
         await page.wait_for_load_state('networkidle')
         await page.wait_for_timeout(2000)
-    push('EasyGo 登入成功（或已維持登入狀態）', 'ok')
+    push('JPH 登入成功（或已維持登入狀態）', 'ok')
 
 
 async def go_to_confirm_order(page, depart_date, push):
@@ -558,7 +558,7 @@ async def fill_quantity_and_get_amount(page, pax_count, push):
     try:
         await page.wait_for_selector("tr:has-text('30%')", timeout=20000)
     except Exception:
-        raise Exception('找不到「30%」類別列，商品可能已下架、頁面結構變動，或 EasyGo 這次載入較慢')
+        raise Exception('找不到「30%」類別列，商品可能已下架、頁面結構變動，或 JPH 這次載入較慢')
     row = page.locator("tr:has-text('30%')").first
     qty_input = row.locator('input').first
     await qty_input.fill(str(pax_count))
@@ -574,7 +574,7 @@ async def fill_quantity_and_get_amount(page, pax_count, push):
         if m:
             amount = float(m.group(1).replace(',', ''))
             break
-    push(f'EasyGo 結算金額：{amount}')
+    push(f'JPH 結算金額：{amount}')
     return amount
 
 
@@ -634,7 +634,7 @@ _GUEST_PHONE_INPUT_JS = """(idx) => {
 
 
 async def _fill_all_guest_blocks(page, full_name, phone, push):
-    """EasyGo 這頁每填一次數量就會多生出「游客N」區塊（觀察到的數量是 pax_count+1，
+    """JPH 這頁每填一次數量就會多生出「游客N」區塊（觀察到的數量是 pax_count+1，
     可能是平台本身的行為，不是我們算錯），與其猜哪幾個才是「真的」，不如全部填同一組
     主要聯絡人資料，反正 SPEC 就是要求多旅客時只填主要聯絡人。
     跟 _fill_by_label 一樣改用 ElementHandle.fill() 真的打字，不用 JS 假事件，
@@ -721,8 +721,8 @@ async def submit_and_pay(page, expected_total, push):
     easygo_order_id = m.group(1) if m else None
     if not easygo_order_id:
         raise Exception(
-            '提交訂單後在網址中找不到 EasyGo 訂單ID（頁面可能還停在原表單，送出沒有真的成功；'
-            '但也可能其實已經送出成功，請務必先去 EasyGo「訂單管理→未支付」確認有沒有重複訂單，再重新執行）'
+            '提交訂單後在網址中找不到 JPH 訂單ID（頁面可能還停在原表單，送出沒有真的成功；'
+            '但也可能其實已經送出成功，請務必先去 JPH「訂單管理→未支付」確認有沒有重複訂單，再重新執行）'
         )
 
     # 金額已經在填人數那步跟 be2 訂單總成本比對過一次了（fill_quantity_and_get_amount），
@@ -735,7 +735,7 @@ async def submit_and_pay(page, expected_total, push):
     await pay_btn.click()
     await page.wait_for_load_state('networkidle')
     await page.wait_for_timeout(2000)
-    push(f'已支付，EasyGo 訂單ID：{easygo_order_id}', 'ok')
+    push(f'已支付，JPH 訂單ID：{easygo_order_id}', 'ok')
     return easygo_order_id
 
 
@@ -761,7 +761,7 @@ async def run_single_order(order_id, be2_user, be2_pw, easygo_user, easygo_pw, p
             amount_ok = amount is not None and abs(amount - order_data['order_total_cost']) <= 0.01
             if not amount_ok:
                 raise SkipOrder(
-                    f"EasyGo 結算金額（{amount}）與 be2 訂單總成本（{order_data['order_total_cost']}）不一致，中止"
+                    f"JPH 結算金額（{amount}）與 be2 訂單總成本（{order_data['order_total_cost']}）不一致，中止"
                 )
             await fill_order_form(easygo_page, order_data, push)
 

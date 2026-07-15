@@ -47,13 +47,11 @@ def index():
 def api_run():
     data = request.json or {}
     order_ids = [o.strip().upper() for o in data.get('order_ids', '').strip().splitlines() if o.strip()]
-    # 每個人用自己的 be2 帳密登入（分享給組員用時，不用共用同一組），介面上沒填才退回 .env 的預設值。
-    be2_username = data.get('be2_username', '').strip() or BE2_USERNAME
-    be2_password = data.get('be2_password', '').strip() or BE2_PASSWORD
+    # 帳密都從 .env 讀（每個人在自己電腦的 .env 填自己的 be2 帳密），網頁上不用填。
     if not order_ids:
         return jsonify({'error': '請輸入至少一筆 KKday 訂單編號'}), 400
-    if not (be2_username and be2_password and EASYGO_PASSWORD):
-        return jsonify({'error': '請輸入你的 be2 帳號密碼，並確認 .env 有設定 EASYGO_PASSWORD'}), 400
+    if not (BE2_USERNAME and BE2_PASSWORD and EASYGO_PASSWORD):
+        return jsonify({'error': '請先在 .env 填好 BE2_USERNAME / BE2_PASSWORD / EASYGO_PASSWORD'}), 400
 
     results = []
     for order_id in order_ids:
@@ -65,7 +63,7 @@ def api_run():
 
         try:
             r = asyncio.run(
-                run_single_order(order_id, be2_username, be2_password, EASYGO_USERNAME, EASYGO_PASSWORD, push)
+                run_single_order(order_id, BE2_USERNAME, BE2_PASSWORD, EASYGO_USERNAME, EASYGO_PASSWORD, push)
             )
         except Exception as e:
             push(f'未預期錯誤：{e}', 'error')
@@ -103,32 +101,65 @@ def api_run():
     )
 
 
-@app.route('/api/export_results', methods=['POST'])
-def export_results():
-    data = request.json or {}
-    results = data.get('results', [])
+def _build_results_xlsx(results, with_timestamp=False):
     wb = Workbook()
     ws = wb.active
     ws.title = '執行紀錄'
-    ws.append(['KKday訂單編號', '狀態', 'EasyGo訂單ID', '說明', '導覽語系', '旅客備註'])
+    header = ['KKday訂單編號', '狀態', 'JPH訂單ID', '說明', '導覽語系', '旅客備註']
+    if with_timestamp:
+        header = ['執行時間'] + header
+    ws.append(header)
     for r in results:
         status = '成功' if r.get('success') else ('中止' if r.get('skipped') else '失敗')
         note = r.get('reason', '') or r.get('error', '')
-        ws.append([
+        row = [
             r.get('order_id', ''),
             status,
             r.get('easygo_order_id', ''),
             note,
             r.get('nav_lang', '') or '',
             r.get('passenger_note', '') or '',
-        ])
+        ]
+        if with_timestamp:
+            row = [r.get('timestamp', '')] + row
+        ws.append(row)
     for col in ws.columns:
         max_len = max((len(str(c.value or '')) for c in col), default=8)
         ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 60)
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    filename = f'EasyGo訂購執行紀錄_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    return buf
+
+
+@app.route('/api/export_results', methods=['POST'])
+def export_results():
+    data = request.json or {}
+    results = data.get('results', [])
+    buf = _build_results_xlsx(results)
+    filename = f'JPH訂購執行紀錄_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    return send_file(
+        buf,
+        download_name=filename,
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+
+
+@app.route('/api/export_history')
+def export_history():
+    # 匯出從有這支工具以來、伺服器上累積的完整執行紀錄（history.json），
+    # 不是只有目前畫面上這一批，重新整理頁面也不會遺失。
+    # 支援用 ?start=YYYY-MM-DD&end=YYYY-MM-DD 篩選日期範圍，不帶就是匯出全部。
+    start_date = request.args.get('start', '').strip()
+    end_date = request.args.get('end', '').strip()
+    history = load_history()
+    if start_date:
+        history = [r for r in history if r.get('timestamp', '')[:10] >= start_date]
+    if end_date:
+        history = [r for r in history if r.get('timestamp', '')[:10] <= end_date]
+    buf = _build_results_xlsx(history, with_timestamp=True)
+    filename = f'JPH訂購完整歷史紀錄_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
     return send_file(
         buf,
         download_name=filename,

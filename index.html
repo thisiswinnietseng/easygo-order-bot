@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EasyGo 訂購自動化</title>
+<title>JPH 訂購自動化</title>
 <style>
 :root {
   --sky: #BFE3F5;
@@ -85,7 +85,7 @@ body {
 .login-row { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field label { font-size: 12px; font-weight: 600; color: var(--text2); }
-input[type=text], input[type=password] {
+input[type=date] {
   border: 1.5px solid var(--border2);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
@@ -95,14 +95,13 @@ input[type=text], input[type=password] {
   background: var(--surface2);
   outline: none;
   transition: border-color .15s, box-shadow .15s;
-  min-width: 200px;
+  min-width: 160px;
 }
-input[type=text]:focus, input[type=password]:focus {
+input[type=date]:focus {
   border-color: var(--green);
   background: #fff;
   box-shadow: 0 0 0 3px rgba(46,158,91,.12);
 }
-.remember { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); padding-bottom: 8px; }
 
 textarea {
   width: 100%;
@@ -279,8 +278,8 @@ button { font-family: inherit; cursor: pointer; border: none; }
 <div class="topbar">
   <span class="rocket">🚀</span>
   <div>
-    <h1>EasyGo 訂購自動化</h1>
-    <p>be2 抓單 → EasyGo 下單付款 → 回填憑證，一鍵出發</p>
+    <h1>JPH 訂購自動化</h1>
+    <p>be2 抓單 → JPH 下單付款 → 回填憑證，一鍵出發</p>
   </div>
   <div class="topbar-right">
     <button class="topbar-help" onclick="openHelp()">📖 使用說明</button>
@@ -290,28 +289,29 @@ button { font-family: inherit; cursor: pointer; border: none; }
 <div class="wrap">
 
   <div class="card">
-    <h2>🪪 你的 be2 帳號</h2>
-    <div class="login-row">
-      <div class="field">
-        <label>帳號</label>
-        <input type="text" id="be2User" placeholder="you@kkday.com" />
-      </div>
-      <div class="field">
-        <label>密碼</label>
-        <input type="password" id="be2Pass" />
-      </div>
-      <label class="remember"><input type="checkbox" id="rememberUser" /> 記住帳號（不記密碼）</label>
-    </div>
-  </div>
-
-  <div class="card">
     <h2>📋 KKday 訂單編號</h2>
     <textarea id="orderIds" placeholder="26KK280740293&#10;26KK280740294"></textarea>
     <p class="hint">每行一個訂單編號，一次可貼多筆（批次處理，單筆失敗不影響其他筆）。</p>
     <div class="actions-row">
       <button id="runBtn" class="btn-run">🚀 開始執行</button>
-      <button id="exportBtn" class="btn-export" disabled>📊 下載 Excel</button>
+      <button id="exportBtn" class="btn-export" disabled>📊 下載本次結果</button>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>📜 下載歷史紀錄</h2>
+    <div class="login-row">
+      <div class="field">
+        <label>開始日期</label>
+        <input type="date" id="historyStart" />
+      </div>
+      <div class="field">
+        <label>結束日期</label>
+        <input type="date" id="historyEnd" />
+      </div>
+      <button id="historyExportBtn" class="btn-export">📜 下載歷史紀錄</button>
+    </div>
+    <p class="hint">兩個日期都不填就是匯出全部歷史紀錄；只填一邊代表「從那天開始」或「到那天為止」。</p>
   </div>
 
   <div class="summary" id="summary"></div>
@@ -324,8 +324,8 @@ button { font-family: inherit; cursor: pointer; border: none; }
   <div class="help-modal">
     <div class="help-modal-head">
       <div>
-        <h2>🚀 EasyGo 訂購自動化 使用說明書</h2>
-        <p>be2 抓單 → EasyGo 下單付款 → 回填憑證 · 操作指南</p>
+        <h2>🚀 JPH 訂購自動化 使用說明書</h2>
+        <p>be2 抓單 → JPH 下單付款 → 回填憑證 · 操作指南</p>
       </div>
       <button class="help-close" onclick="closeHelp()">✕</button>
     </div>
@@ -337,14 +337,25 @@ button { font-family: inherit; cursor: pointer; border: none; }
           <div class="help-row-icon">🪪</div>
           <div class="help-row-content">
             <div class="help-row-title">你的 be2 帳號 / 密碼</div>
-            <div class="help-row-desc">每個人用<b>自己的</b> be2 帳密登入，不共用同一組。勾選「記住帳號」後重整頁面會自動帶入帳號（<b>密碼不會被記住</b>，每次都要重新輸入）。</div>
+            <div class="help-row-desc">每個人用<b>自己的</b> be2 帳密，填在自己電腦的 <code>.env</code> 檔案裡（<code>BE2_USERNAME</code> / <code>BE2_PASSWORD</code>），網頁上不用輸入。<b>不要把自己的帳密給別人用</b>，每個人應該用自己的 <code>.env</code> 填自己的帳號，這樣 be2 上的操作紀錄才會顯示是本人執行的。</div>
           </div>
         </div>
         <div class="help-row">
           <div class="help-row-icon">🔑</div>
           <div class="help-row-content">
-            <div class="help-row-title">EasyGo 供應商帳號</div>
-            <div class="help-row-desc">EasyGo（供應商平台）用的是公司共用帳號，已經設定在程式的 <code>.env</code> 檔案裡，不用在網頁上填，也不需要每個人申請一組。</div>
+            <div class="help-row-title">JPH 供應商帳號</div>
+            <div class="help-row-desc">JPH（供應商平台）用的是公司共用帳號，一樣填在 <code>.env</code> 裡（<code>EASYGO_PASSWORD</code>，跟主管或 Winnie 索取密碼）。</div>
+          </div>
+        </div>
+        <div class="help-row">
+          <div class="help-row-icon">📝</div>
+          <div class="help-row-content">
+            <div class="help-row-title">怎麼編輯 .env</div>
+            <div class="help-row-desc">
+              <code>.env</code> 是隱藏檔案，在自己電腦裡打開終端機（Terminal），貼上：<br>
+              <code style="display:inline-block;margin-top:4px">open -e ~/Desktop/easygo-order-bot/.env</code><br>
+              會用「文字編輯」打開，把 <code>BE2_USERNAME</code>、<code>BE2_PASSWORD</code>、<code>EASYGO_PASSWORD</code> 後面都填好，存檔即可。<code>.env</code> 只留在<b>自己的電腦上</b>，不會上傳、也不會被別人看到，所以填自己的帳密是安全的。
+            </div>
           </div>
         </div>
       </div>
@@ -352,13 +363,14 @@ button { font-family: inherit; cursor: pointer; border: none; }
       <div class="help-section">
         <div class="help-section-title">📋 怎麼使用</div>
         <ol class="help-steps">
-          <li>填好你的 be2 帳號密碼</li>
+          <li>第一次使用要先照上面說明把 <code>.env</code> 填好（見「開始前準備」）</li>
           <li>把要訂購的 KKday 訂單編號貼進文字框，<b>一行一筆</b>，可以一次貼很多筆（批次處理）</li>
           <li>按「🚀 開始執行」，會跳出 Chrome 視窗讓你全程看著跑，不用手動操作</li>
           <li>每一筆都會顯示結果卡片：<span class="badge success" style="font-size:10px">成功</span> <span class="badge skipped" style="font-size:10px">中止</span> <span class="badge failed" style="font-size:10px">失敗</span>，點開可以看詳細執行過程</li>
-          <li>全部跑完後可以按「📊 下載 Excel」，匯出這批的執行紀錄</li>
+          <li>全部跑完後可以按「📊 下載本次結果」，匯出這批的執行紀錄</li>
         </ol>
         <div class="help-tip">💡 批次處理時，單筆訂單失敗或中止<b>不會影響其他筆</b>，會繼續往下跑完剩下的訂單。</div>
+        <div class="help-tip">📜「下載歷史紀錄」區塊會匯出<b>伺服器上累積的所有執行紀錄</b>（不只這次畫面上看到的），就算重新整理頁面也不會遺失；可以選填開始/結束日期只匯出某段期間，兩個都不填就是全部。</div>
       </div>
 
       <div class="help-section">
@@ -373,15 +385,15 @@ button { font-family: inherit; cursor: pointer; border: none; }
         <div class="help-row">
           <div class="help-row-icon">2️⃣</div>
           <div class="help-row-content">
-            <div class="help-row-title">EasyGo 端：下單 + 付款</div>
-            <div class="help-row-desc">登入 EasyGo → 用固定商品ID開商品確認頁 → 選日期 = be2 出發日期 → 類別固定選「30%」、依人數填數量 → 系統算出的結算金額<b>須與 be2 訂單總成本一致</b>才會繼續 → 填確認信箱（固定 op-ib@kkday.com）、簡体中文、游客姓名/手機/國籍/緊急聯絡（固定 X）→ 內部備註填入 KKday 訂單編號 → 提交訂單 → 立即支付。</div>
+            <div class="help-row-title">JPH 端：下單 + 付款</div>
+            <div class="help-row-desc">登入 JPH → 用固定商品ID開商品確認頁 → 選日期 = be2 出發日期 → 類別固定選「30%」、依人數填數量 → 系統算出的結算金額<b>須與 be2 訂單總成本一致</b>才會繼續 → 填確認信箱（固定 op-ib@kkday.com）、簡体中文、游客姓名/手機/國籍/緊急聯絡（固定 X）→ 內部備註填入 KKday 訂單編號 → 提交訂單 → 立即支付。</div>
           </div>
         </div>
         <div class="help-row">
           <div class="help-row-icon">3️⃣</div>
           <div class="help-row-content">
             <div class="help-row-title">be2 端：回填憑證</div>
-            <div class="help-row-desc">回 be2「發送Voucher」分頁 → 填入 EasyGo 訂單ID → 產生 KKday 憑證 → 寄送 Voucher 給旅客 → 標記「已寄出Voucher」→ 這筆訂單完成！</div>
+            <div class="help-row-desc">回 be2「發送Voucher」分頁 → 填入 JPH 訂單ID → 產生 KKday 憑證 → 寄送 Voucher 給旅客 → 標記「已寄出Voucher」→ 這筆訂單完成！</div>
           </div>
         </div>
       </div>
@@ -389,10 +401,10 @@ button { font-family: inherit; cursor: pointer; border: none; }
       <div class="help-section">
         <div class="help-section-title">⚠️ 注意事項</div>
         <div class="help-tip warn">
-          <b>不要對同一張已經下單付款過的訂單重複執行。</b>EasyGo 下單目前沒有防重複下單機制，同一張 KKday 訂單如果已經在 EasyGo 建立過訂單，再跑一次會產生第二筆重複訂單（重複扣款）。
+          <b>不要對同一張已經下單付款過的訂單重複執行。</b>JPH 下單目前沒有防重複下單機制，同一張 KKday 訂單如果已經在 JPH 建立過訂單，再跑一次會產生第二筆重複訂單（重複扣款）。
         </div>
         <div class="help-tip">
-          「導覽語系」非 zh-tw、「旅客備註」有內容，<b>都不會中止流程</b>，還是會正常送出訂單，只會把這兩項實際值記錄在執行紀錄跟 Excel 匯出裡，供你事後回顧（旅客備註內容不會被帶入 EasyGo 訂單，因為 EasyGo 表單本身沒有對應欄位）。
+          「導覽語系」非 zh-tw、「旅客備註」有內容，<b>都不會中止流程</b>，還是會正常送出訂單，只會把這兩項實際值記錄在執行紀錄跟 Excel 匯出裡，供你事後回顧（旅客備註內容不會被帶入 JPH 訂單，因為 JPH 表單本身沒有對應欄位）。
         </div>
         <div class="help-tip">
           金額比對只在「填人數」那一步做一次，跟 be2「訂單總成本」不一致就會中止該筆並記錄原因；付款頁不再重複比對。
@@ -414,36 +426,11 @@ const runBtn = document.getElementById('runBtn');
 const exportBtn = document.getElementById('exportBtn');
 const summaryEl = document.getElementById('summary');
 const resultsEl = document.getElementById('results');
-const be2UserEl = document.getElementById('be2User');
-const rememberUserEl = document.getElementById('rememberUser');
-
-if (localStorage.getItem('remember_be2_user') === '1') {
-  rememberUserEl.checked = true;
-  be2UserEl.value = localStorage.getItem('be2_user') || '';
-}
-rememberUserEl.addEventListener('change', () => {
-  if (rememberUserEl.checked) {
-    localStorage.setItem('remember_be2_user', '1');
-    localStorage.setItem('be2_user', be2UserEl.value);
-  } else {
-    localStorage.removeItem('remember_be2_user');
-    localStorage.removeItem('be2_user');
-  }
-});
-be2UserEl.addEventListener('input', () => {
-  if (rememberUserEl.checked) localStorage.setItem('be2_user', be2UserEl.value);
-});
 
 let lastResults = [];
 
 runBtn.addEventListener('click', async () => {
   const orderIds = document.getElementById('orderIds').value;
-  const be2User = be2UserEl.value.trim();
-  const be2Pass = document.getElementById('be2Pass').value;
-  if (!be2User || !be2Pass) {
-    summaryEl.innerHTML = `<div class="error-banner">請先輸入你的 be2 帳號密碼</div>`;
-    return;
-  }
   runBtn.disabled = true;
   exportBtn.disabled = true;
   runBtn.textContent = '🚀 執行中...';
@@ -453,7 +440,7 @@ runBtn.addEventListener('click', async () => {
     const res = await fetch('/api/run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_ids: orderIds, be2_username: be2User, be2_password: be2Pass }),
+      body: JSON.stringify({ order_ids: orderIds }),
     });
     const data = await res.json();
     if (data.error) {
@@ -470,7 +457,7 @@ runBtn.addEventListener('click', async () => {
       const icon = r.success ? '✅' : (r.skipped ? '⏸️' : '❌');
       const badgeText = r.success ? '成功' : (r.skipped ? '中止' : '失敗');
       div.className = `order-block ${kind}`;
-      const extra = r.easygo_order_id ? `EasyGo訂單ID: ${r.easygo_order_id}` : (r.reason || r.error || '');
+      const extra = r.easygo_order_id ? `JPH訂單ID: ${r.easygo_order_id}` : (r.reason || r.error || '');
       div.innerHTML = `
         <div class="card-head">
           <span>${icon}</span>
@@ -501,6 +488,7 @@ exportBtn.addEventListener('click', async () => {
   if (!lastResults.length) return;
   exportBtn.disabled = true;
   exportBtn.textContent = '📊 匯出中...';
+  const originalLabel = '📊 下載本次結果';
   try {
     const res = await fetch('/api/export_results', {
       method: 'POST',
@@ -512,7 +500,7 @@ exportBtn.addEventListener('click', async () => {
     const disposition = res.headers.get('Content-Disposition') || '';
     const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/);
     const plainMatch = disposition.match(/filename="?([^";]+)"?/);
-    const filename = utf8Match ? decodeURIComponent(utf8Match[1]) : (plainMatch ? plainMatch[1] : 'EasyGo訂購執行紀錄.xlsx');
+    const filename = utf8Match ? decodeURIComponent(utf8Match[1]) : (plainMatch ? plainMatch[1] : 'JPH訂購執行紀錄.xlsx');
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -525,8 +513,18 @@ exportBtn.addEventListener('click', async () => {
     alert(`匯出失敗：${e}`);
   } finally {
     exportBtn.disabled = false;
-    exportBtn.textContent = '📊 下載 Excel';
+    exportBtn.textContent = originalLabel;
   }
+});
+
+document.getElementById('historyExportBtn').addEventListener('click', () => {
+  const start = document.getElementById('historyStart').value;
+  const end = document.getElementById('historyEnd').value;
+  const params = new URLSearchParams();
+  if (start) params.set('start', start);
+  if (end) params.set('end', end);
+  const qs = params.toString();
+  window.location.href = '/api/export_history' + (qs ? `?${qs}` : '');
 });
 </script>
 </body>
