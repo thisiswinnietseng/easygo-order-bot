@@ -45,7 +45,23 @@ echo "✅ 瀏覽器安裝完成"
 if [ ! -f ".env" ]; then
   cp .env.example .env
   echo "✅ 設定檔建立完成（.env）"
-  echo "⚠️  請打開 .env，跟 Winnie 或主管索取 EASYGO_PASSWORD 填進去"
+  echo "⚠️  請打開 .env，填入 BE2_USERNAME / BE2_PASSWORD（你自己的 be2 帳密）"
+  echo "⚠️  以及跟 Winnie 或主管索取 EASYGO_PASSWORD 填進去"
+else
+  # 舊版使用者的 .env 可能還沒有 BE2_USERNAME / BE2_PASSWORD 這兩行，自動補上
+  NEED_BE2=0
+  if ! grep -q "^BE2_USERNAME=" .env; then
+    echo "BE2_USERNAME=" >> .env
+    NEED_BE2=1
+  fi
+  if ! grep -q "^BE2_PASSWORD=" .env; then
+    echo "BE2_PASSWORD=" >> .env
+    NEED_BE2=1
+  fi
+  if [ "$NEED_BE2" = "1" ]; then
+    echo "⚠️  偵測到 .env 需要更新，已幫你補上 BE2_USERNAME / BE2_PASSWORD 兩行"
+    echo "⚠️  請打開 .env，填入你自己的 be2 帳號密碼"
+  fi
 fi
 
 echo ""
