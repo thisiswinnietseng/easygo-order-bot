@@ -289,7 +289,15 @@ button { font-family: inherit; cursor: pointer; border: none; }
 <div class="wrap">
 
   <div class="card">
-    <h2>📋 KKday 訂單編號</h2>
+    <h2>🔍 自動搜尋待處理訂單</h2>
+    <p class="hint">依「商品對照表」（product_mapping.json）裡的每個 KKday 商品編號，自動到 be2 搜尋符合條件（處理中＋旅客資料已齊全）的訂單，找到對照表就直接下單付款，找不到就跳過並記錄原因。不用手動貼訂單編號。</p>
+    <div class="actions-row">
+      <button id="discoverBtn" class="btn-run">🔍 搜尋並執行</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 手動貼訂單編號</h2>
     <textarea id="orderIds" placeholder="26KK280740293&#10;26KK280740294"></textarea>
     <p class="hint">每行一個訂單編號，一次可貼多筆（批次處理，單筆失敗不影響其他筆）。</p>
     <div class="actions-row">
@@ -364,8 +372,9 @@ button { font-family: inherit; cursor: pointer; border: none; }
         <div class="help-section-title">📋 怎麼使用</div>
         <ol class="help-steps">
           <li>第一次使用要先照上面說明把 <code>.env</code> 填好（見「開始前準備」）</li>
-          <li>把要訂購的 KKday 訂單編號貼進文字框，<b>一行一筆</b>，可以一次貼很多筆（批次處理）</li>
-          <li>按「🚀 開始執行」，會跳出 Chrome 視窗讓你全程看著跑，不用手動操作</li>
+          <li><b>方法一（推薦）：</b>直接按「🔍 搜尋並執行」，會依「商品對照表」自動到 be2 搜尋符合條件的訂單並直接下單付款，不用手動找訂單編號</li>
+          <li><b>方法二：</b>把要訂購的 KKday 訂單編號貼進「手動貼訂單編號」文字框，<b>一行一筆</b>，可以一次貼很多筆，按「🚀 開始執行」</li>
+          <li>不管哪種方法，都會跳出 Chrome 視窗讓你全程看著跑，不用手動操作</li>
           <li>每一筆都會顯示結果卡片：<span class="badge success" style="font-size:10px">成功</span> <span class="badge skipped" style="font-size:10px">中止</span> <span class="badge failed" style="font-size:10px">失敗</span>，點開可以看詳細執行過程</li>
           <li>全部跑完後可以按「📊 下載本次結果」，匯出這批的執行紀錄</li>
         </ol>
@@ -375,6 +384,13 @@ button { font-family: inherit; cursor: pointer; border: none; }
 
       <div class="help-section">
         <div class="help-section-title">🔄 執行邏輯與步驟</div>
+        <div class="help-row">
+          <div class="help-row-icon">0️⃣</div>
+          <div class="help-row-content">
+            <div class="help-row-title">（自動搜尋模式限定）be2 端：搜尋待處理訂單</div>
+            <div class="help-row-desc">依 <code>product_mapping.json</code> 商品對照表裡的每個 KKday 商品編號，到 be2 訂單查詢頁搜尋：訂單狀態=處理中、KKday訂單處理狀態=旅客資料已齊全 → 用查詢結果的商品編號＋套餐名稱比對對照表 → 找到對應的 JPH 商品/類別才會繼續下單；<b>找不到對照表的套餐直接跳過並記錄原因，不會亂猜下單</b>。</div>
+          </div>
+        </div>
         <div class="help-row">
           <div class="help-row-icon">1️⃣</div>
           <div class="help-row-content">
@@ -386,7 +402,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
           <div class="help-row-icon">2️⃣</div>
           <div class="help-row-content">
             <div class="help-row-title">JPH 端：下單 + 付款</div>
-            <div class="help-row-desc">登入 JPH → 用固定商品ID開商品確認頁 → 選日期 = be2 出發日期 → 類別固定選「30%」、依人數填數量 → 系統算出的結算金額<b>須與 be2 訂單總成本一致</b>才會繼續 → 填確認信箱（固定 op-ib@kkday.com）、簡体中文、游客姓名/手機/國籍/緊急聯絡（固定 X）→ 內部備註填入 KKday 訂單編號 → 提交訂單 → 立即支付。</div>
+            <div class="help-row-desc">登入 JPH → 用對照表查到的商品ID開商品確認頁 → 選日期 = be2 出發日期 → 選對照表查到的類別、依人數填數量 → 系統算出的結算金額<b>須與 be2 訂單總成本一致</b>才會繼續 → 填確認信箱（固定 op-ib@kkday.com）、簡体中文、游客姓名/手機/國籍/緊急聯絡（固定 X）、需要的商品另外填「是否可以食用牛肉」（依每位旅客餐食統計）→ 內部備註填入 KKday 訂單編號 → 提交訂單 → 立即支付。</div>
           </div>
         </div>
         <div class="help-row">
@@ -402,6 +418,12 @@ button { font-family: inherit; cursor: pointer; border: none; }
         <div class="help-section-title">⚠️ 注意事項</div>
         <div class="help-tip warn">
           <b>不要對同一張已經下單付款過的訂單重複執行。</b>JPH 下單目前沒有防重複下單機制，同一張 KKday 訂單如果已經在 JPH 建立過訂單，再跑一次會產生第二筆重複訂單（重複扣款）。
+        </div>
+        <div class="help-tip warn">
+          「🔍 搜尋並執行」找到符合條件的訂單後，<b>會直接自動下單付款，不會再逐筆跟你確認</b>。請確保「商品對照表」（product_mapping.json）裡的設定正確無誤，避免下錯商品。
+        </div>
+        <div class="help-tip">
+          目前只有已經加進「商品對照表」的商品/套餐才會被自動搜尋抓到並下單；沒對照到的套餐會直接跳過、記錄「找不到對照表」，不會亂猜下單。要新增支援的商品，跟 Winnie 說一聲即可。
         </div>
         <div class="help-tip">
           「導覽語系」非 zh-tw、「旅客備註」有內容，<b>都不會中止流程</b>，還是會正常送出訂單，只會把這兩項實際值記錄在執行紀錄跟 Excel 匯出裡，供你事後回顧（旅客備註內容不會被帶入 JPH 訂單，因為 JPH 表單本身沒有對應欄位）。
@@ -424,10 +446,68 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp();
 <script>
 const runBtn = document.getElementById('runBtn');
 const exportBtn = document.getElementById('exportBtn');
+const discoverBtn = document.getElementById('discoverBtn');
 const summaryEl = document.getElementById('summary');
 const resultsEl = document.getElementById('results');
 
 let lastResults = [];
+
+function renderResults(data) {
+  if (data.error) {
+    summaryEl.innerHTML = `<div class="error-banner">${data.error}</div>`;
+    return;
+  }
+  lastResults = data.results;
+  exportBtn.disabled = lastResults.length === 0;
+  const s = data.summary;
+  summaryEl.innerHTML = `共 ${s.total} 筆：<span class="n-ok">成功 ${s.succeeded}</span>，<span class="n-skip">中止 ${s.skipped}</span>，<span class="n-fail">失敗 ${s.failed}</span>`;
+
+  if (data.discovery_progress && data.discovery_progress.length) {
+    const div = document.createElement('div');
+    div.className = 'order-block';
+    div.innerHTML = `
+      <div class="card-head">
+        <span>🔍</span>
+        <span class="order-id">搜尋紀錄</span>
+      </div>
+      <div class="log-body"></div>
+    `;
+    const body = div.querySelector('.log-body');
+    data.discovery_progress.forEach(p => {
+      const line = document.createElement('div');
+      line.className = `log-line ${p.status}`;
+      line.textContent = p.msg;
+      body.appendChild(line);
+    });
+    resultsEl.appendChild(div);
+  }
+
+  data.results.forEach(r => {
+    const div = document.createElement('div');
+    const kind = r.success ? 'success' : (r.skipped ? 'skipped' : 'failed');
+    const icon = r.success ? '✅' : (r.skipped ? '⏸️' : '❌');
+    const badgeText = r.success ? '成功' : (r.skipped ? '中止' : '失敗');
+    div.className = `order-block ${kind}`;
+    const extra = r.easygo_order_id ? `JPH訂單ID: ${r.easygo_order_id}` : (r.reason || r.error || '');
+    div.innerHTML = `
+      <div class="card-head">
+        <span>${icon}</span>
+        <span class="order-id">${r.order_id}</span>
+        <span class="badge ${kind}">${badgeText}</span>
+        <span class="extra-info">${extra}</span>
+      </div>
+      <div class="log-body"></div>
+    `;
+    const body = div.querySelector('.log-body');
+    (r.progress || []).forEach(p => {
+      const line = document.createElement('div');
+      line.className = `log-line ${p.status}`;
+      line.textContent = p.msg;
+      body.appendChild(line);
+    });
+    resultsEl.appendChild(div);
+  });
+}
 
 runBtn.addEventListener('click', async () => {
   const orderIds = document.getElementById('orderIds').value;
@@ -443,44 +523,36 @@ runBtn.addEventListener('click', async () => {
       body: JSON.stringify({ order_ids: orderIds }),
     });
     const data = await res.json();
-    if (data.error) {
-      summaryEl.innerHTML = `<div class="error-banner">${data.error}</div>`;
-      return;
-    }
-    lastResults = data.results;
-    exportBtn.disabled = lastResults.length === 0;
-    const s = data.summary;
-    summaryEl.innerHTML = `共 ${s.total} 筆：<span class="n-ok">成功 ${s.succeeded}</span>，<span class="n-skip">中止 ${s.skipped}</span>，<span class="n-fail">失敗 ${s.failed}</span>`;
-    data.results.forEach(r => {
-      const div = document.createElement('div');
-      const kind = r.success ? 'success' : (r.skipped ? 'skipped' : 'failed');
-      const icon = r.success ? '✅' : (r.skipped ? '⏸️' : '❌');
-      const badgeText = r.success ? '成功' : (r.skipped ? '中止' : '失敗');
-      div.className = `order-block ${kind}`;
-      const extra = r.easygo_order_id ? `JPH訂單ID: ${r.easygo_order_id}` : (r.reason || r.error || '');
-      div.innerHTML = `
-        <div class="card-head">
-          <span>${icon}</span>
-          <span class="order-id">${r.order_id}</span>
-          <span class="badge ${kind}">${badgeText}</span>
-          <span class="extra-info">${extra}</span>
-        </div>
-        <div class="log-body"></div>
-      `;
-      const body = div.querySelector('.log-body');
-      (r.progress || []).forEach(p => {
-        const line = document.createElement('div');
-        line.className = `log-line ${p.status}`;
-        line.textContent = p.msg;
-        body.appendChild(line);
-      });
-      resultsEl.appendChild(div);
-    });
+    renderResults(data);
   } catch (e) {
     summaryEl.innerHTML = `<div class="error-banner">請求失敗：${e}</div>`;
   } finally {
     runBtn.disabled = false;
     runBtn.textContent = '🚀 開始執行';
+  }
+});
+
+discoverBtn.addEventListener('click', async () => {
+  discoverBtn.disabled = true;
+  runBtn.disabled = true;
+  exportBtn.disabled = true;
+  discoverBtn.textContent = '🔍 搜尋並執行中...';
+  summaryEl.textContent = '';
+  resultsEl.innerHTML = '';
+  try {
+    const res = await fetch('/api/discover_and_run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    renderResults(data);
+  } catch (e) {
+    summaryEl.innerHTML = `<div class="error-banner">請求失敗：${e}</div>`;
+  } finally {
+    discoverBtn.disabled = false;
+    runBtn.disabled = false;
+    discoverBtn.textContent = '🔍 搜尋並執行';
   }
 });
 

@@ -1,0 +1,31 @@
+{
+  "_說明": "KKday 商品/套餐 -> JPH(EasyGo) 商品/類別 對照表。要支援新商品時，在 mappings 陣列加一筆新物件即可，不用改程式碼。kkday_package_id 是 be2 訂單列表「套餐名稱」欄位的完整文字（套餐名稱之後如果改字，這裡也要跟著改）；留空字串代表這個 KKday 商品下只有一個套餐、不用比對套餐名稱。",
+  "mappings": [
+    {
+      "kkday_product_id": "166716",
+      "kkday_package_id": "【限量折扣】絲島一日遊",
+      "jph_product_id": "240624000003",
+      "jph_category": "30%",
+      "name": "Yokabus日本九州 福岡 絲島 糸島一日遊｜白絲瀑布＆一蘭之森＆櫻井二見浦夫婦岩｜中文服務（福岡出發）",
+      "supplier": "Japan Holiday Travel Kyushu"
+    },
+    {
+      "kkday_product_id": "32511",
+      "kkday_package_id": "【限時優惠】福岡出發九州一日遊｜含宮崎特色午餐",
+      "jph_product_id": "230314000002",
+      "jph_category": "大人（牛肉餐）折扣",
+      "name": "日本九州一日遊｜高千穗峽＆天岩戸神社＆天安河原＆上色見熊野座神社｜可選宮崎特色午餐（福岡出發）",
+      "supplier": "Japan Holiday Travel Kyushu",
+      "needs_beef_field": true
+    },
+    {
+      "kkday_product_id": "32511",
+      "kkday_package_id": "【2人同行優惠】福岡出發九州一日遊｜含午餐",
+      "jph_product_id": "230314000002",
+      "jph_category": "大人（含餐）【暑期特惠：買1送1（1組2名）】",
+      "name": "日本九州一日遊｜高千穗峽＆天岩戸神社＆天安河原＆上色見熊野座神社｜可選宮崎特色午餐（福岡出發）",
+      "supplier": "Japan Holiday Travel Kyushu",
+      "needs_beef_field": true
+    }
+  ]
+}
