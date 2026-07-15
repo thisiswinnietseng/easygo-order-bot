@@ -293,6 +293,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
     <p class="hint">依「商品對照表」（product_mapping.json）裡的每個 KKday 商品編號，自動到 be2 搜尋符合條件（處理中＋旅客資料已齊全）的訂單，找到對照表就直接下單付款，找不到就跳過並記錄原因。不用手動貼訂單編號。</p>
     <div class="actions-row">
       <button id="discoverBtn" class="btn-run">🔍 搜尋並執行</button>
+      <button id="discoverExportBtn" class="btn-export" disabled>📊 下載本次結果</button>
     </div>
   </div>
 
@@ -395,7 +396,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
           <div class="help-row-icon">1️⃣</div>
           <div class="help-row-content">
             <div class="help-row-title">be2 端：抓資料 + 領單</div>
-            <div class="help-row-desc">登入 be2 → 開啟訂單 → 讀取導覽語系、出發日期、訂單總成本、旅客人數、旅客姓名、訂購人資料、旅客備註 → 點擊「OP領取鍵」→「已訂出待供應商回覆」。</div>
+            <div class="help-row-desc">登入 be2 → 開啟訂單 → 讀取導覽語系、出發日期、訂單總成本、旅客人數、商品編號/商品名稱/套餐名稱、旅客資料規格（若有特殊內容才記錄）、旅客姓名、訂購人資料、旅客備註 → 點擊「OP領取鍵」→「已訂出待供應商回覆」。</div>
           </div>
         </div>
         <div class="help-row">
@@ -429,6 +430,9 @@ button { font-family: inherit; cursor: pointer; border: none; }
           「導覽語系」非 zh-tw、「旅客備註」有內容，<b>都不會中止流程</b>，還是會正常送出訂單，只會把這兩項實際值記錄在執行紀錄跟 Excel 匯出裡，供你事後回顧（旅客備註內容不會被帶入 JPH 訂單，因為 JPH 表單本身沒有對應欄位）。
         </div>
         <div class="help-tip">
+          執行紀錄跟 Excel 匯出也會多帶 KKday商品名稱、KKday商品編號、KKday套餐名稱、旅客資料規格（若有特殊內容，例如帶嬰兒同行才記錄）這幾欄，方便事後比對每筆訂單對應哪個商品/套餐、是否有需要人工去 JPH 補填的狀況。
+        </div>
+        <div class="help-tip">
           金額比對只在「填人數」那一步做一次，跟 be2「訂單總成本」不一致就會中止該筆並記錄原因；付款頁不再重複比對。
         </div>
       </div>
@@ -447,6 +451,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp();
 const runBtn = document.getElementById('runBtn');
 const exportBtn = document.getElementById('exportBtn');
 const discoverBtn = document.getElementById('discoverBtn');
+const discoverExportBtn = document.getElementById('discoverExportBtn');
 const summaryEl = document.getElementById('summary');
 const resultsEl = document.getElementById('results');
 
@@ -459,6 +464,7 @@ function renderResults(data) {
   }
   lastResults = data.results;
   exportBtn.disabled = lastResults.length === 0;
+  discoverExportBtn.disabled = lastResults.length === 0;
   const s = data.summary;
   summaryEl.innerHTML = `共 ${s.total} 筆：<span class="n-ok">成功 ${s.succeeded}</span>，<span class="n-skip">中止 ${s.skipped}</span>，<span class="n-fail">失敗 ${s.failed}</span>`;
 
@@ -513,6 +519,7 @@ runBtn.addEventListener('click', async () => {
   const orderIds = document.getElementById('orderIds').value;
   runBtn.disabled = true;
   exportBtn.disabled = true;
+  discoverExportBtn.disabled = true;
   runBtn.textContent = '🚀 執行中...';
   summaryEl.textContent = '';
   resultsEl.innerHTML = '';
@@ -536,6 +543,7 @@ discoverBtn.addEventListener('click', async () => {
   discoverBtn.disabled = true;
   runBtn.disabled = true;
   exportBtn.disabled = true;
+  discoverExportBtn.disabled = true;
   discoverBtn.textContent = '🔍 搜尋並執行中...';
   summaryEl.textContent = '';
   resultsEl.innerHTML = '';
@@ -556,11 +564,11 @@ discoverBtn.addEventListener('click', async () => {
   }
 });
 
-exportBtn.addEventListener('click', async () => {
+async function downloadResults(btn) {
   if (!lastResults.length) return;
-  exportBtn.disabled = true;
-  exportBtn.textContent = '📊 匯出中...';
-  const originalLabel = '📊 下載本次結果';
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '📊 匯出中...';
   try {
     const res = await fetch('/api/export_results', {
       method: 'POST',
@@ -584,10 +592,13 @@ exportBtn.addEventListener('click', async () => {
   } catch (e) {
     alert(`匯出失敗：${e}`);
   } finally {
-    exportBtn.disabled = false;
-    exportBtn.textContent = originalLabel;
+    btn.disabled = false;
+    btn.textContent = originalLabel;
   }
-});
+}
+
+exportBtn.addEventListener('click', () => downloadResults(exportBtn));
+discoverExportBtn.addEventListener('click', () => downloadResults(discoverExportBtn));
 
 document.getElementById('historyExportBtn').addEventListener('click', () => {
   const start = document.getElementById('historyStart').value;
