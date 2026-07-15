@@ -1,0 +1,18 @@
+# 環境設定（含密碼，絕對不上傳）
+.env
+
+# Python 虛擬環境
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# 執行紀錄與使用者資料
+*.log
+history.json
+
+# 除錯用截圖
+*.png
+
+# macOS 系統檔
+.DS_Store

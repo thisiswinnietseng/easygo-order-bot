@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyGo 訂購自動化</title>
+<style>
+:root {
+  --sky: #BFE3F5;
+  --sky-light: #EAF7FC;
+  --green: #2E9E5B;
+  --green-dark: #1F7A45;
+  --green-light: #E4F6EC;
+  --amber: #F0A93B;
+  --amber-dark: #C8801E;
+  --amber-light: #FEF3DD;
+  --red: #E15A4C;
+  --red-light: #FDEAE7;
+  --wood: #6B4A2E;
+  --wood-dark: #4A3220;
+  --surface: #FFFFFF;
+  --surface2: #FFFBF2;
+  --border: #E8DDC8;
+  --border2: #D8C7A3;
+  --text: #3A2E1E;
+  --text2: #6B5B42;
+  --text3: #A5947A;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 2px 6px rgba(74,50,32,.08), 0 8px 24px rgba(74,50,32,.06);
+}
+* , *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+  background:
+    radial-gradient(ellipse 500px 200px at 12% 8%, rgba(255,255,255,.9), transparent 60%),
+    radial-gradient(ellipse 400px 160px at 85% 4%, rgba(255,255,255,.7), transparent 60%),
+    linear-gradient(180deg, var(--sky) 0%, var(--sky-light) 220px, #FBF6E8 220px, #FBF6E8 100%);
+  background-attachment: fixed;
+  padding-bottom: 60px;
+}
+
+/* ── Header ── */
+.topbar {
+  background: linear-gradient(135deg, var(--wood) 0%, var(--wood-dark) 100%);
+  color: #fff;
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow);
+}
+.topbar .rocket { font-size: 26px; }
+.topbar h1 { font-size: 18px; font-weight: 700; letter-spacing: .01em; }
+.topbar p { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 2px; }
+
+.wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px 0; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+.card h2 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Form elements ── */
+.login-row { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--text2); }
+input[type=text], input[type=password] {
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  min-width: 200px;
+}
+input[type=text]:focus, input[type=password]:focus {
+  border-color: var(--green);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(46,158,91,.12);
+}
+.remember { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); padding-bottom: 8px; }
+
+textarea {
+  width: 100%;
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-family: 'Menlo', 'Consolas', 'SF Mono', monospace;
+  font-size: 12.5px;
+  color: var(--text);
+  background: var(--surface2);
+  resize: vertical;
+  outline: none;
+  min-height: 100px;
+  transition: border-color .15s, box-shadow .15s;
+}
+textarea:focus { border-color: var(--green); background: #fff; box-shadow: 0 0 0 3px rgba(46,158,91,.12); }
+.hint { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+/* ── Buttons ── */
+button { font-family: inherit; cursor: pointer; border: none; }
+.btn-run {
+  width: 100%;
+  height: 46px;
+  margin-top: 16px;
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+  color: #fff;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(46,158,91,.35);
+  transition: transform .1s, box-shadow .15s, opacity .15s;
+}
+.btn-run:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(46,158,91,.45); }
+.btn-run:active:not(:disabled) { transform: translateY(0); }
+.btn-run:disabled { opacity: .55; cursor: default; }
+
+.btn-export {
+  height: 38px;
+  padding: 0 18px;
+  background: var(--amber-light);
+  border: 1.5px solid var(--amber);
+  color: var(--amber-dark);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .15s, transform .1s;
+}
+.btn-export:hover:not(:disabled) { background: #FDE9C4; }
+.btn-export:disabled { opacity: .45; cursor: default; }
+
+.actions-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+.actions-row .btn-run { flex: 1; margin-top: 0; }
+
+/* ── Summary ── */
+.summary {
+  margin: 4px 0 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.summary .n-ok { color: var(--green-dark); }
+.summary .n-skip { color: var(--amber-dark); }
+.summary .n-fail { color: var(--red); }
+
+/* ── Result cards ── */
+.order-block {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-top: 14px;
+  overflow: hidden;
+}
+.order-block .card-head {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+}
+.order-block.success .card-head { background: var(--green-light); }
+.order-block.skipped .card-head { background: var(--amber-light); }
+.order-block.failed .card-head { background: var(--red-light); }
+.order-id { font-weight: 700; font-size: 14px; font-family: 'Menlo','Consolas',monospace; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 100px; font-size: 11.5px; font-weight: 700; color: #fff; }
+.badge.success { background: var(--green); }
+.badge.skipped { background: var(--amber-dark); }
+.badge.failed { background: var(--red); }
+.extra-info { font-size: 12px; color: var(--text2); }
+
+.log-body { padding: 10px 16px 14px; }
+.log-line { font-size: 12.5px; padding: 3px 0; font-family: 'Menlo','Consolas',monospace; }
+.log-line.ok { color: var(--green-dark); }
+.log-line.error { color: var(--red); font-weight: 600; }
+.log-line.skip { color: var(--amber-dark); font-weight: 600; }
+.log-line.warn { color: var(--amber-dark); }
+.log-line.info { color: var(--text3); }
+
+.error-banner {
+  background: var(--red-light);
+  border: 1.5px solid var(--red);
+  color: #8a2f24;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Topbar help button ── */
+.topbar-right { margin-left: auto; }
+.topbar-help {
+  display: flex; align-items: center; gap: 5px;
+  background: transparent; border: 1px solid rgba(255,255,255,.3); color: rgba(255,255,255,.85);
+  border-radius: 100px; padding: 6px 14px; font-size: 12.5px; font-family: inherit; font-weight: 600;
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.topbar-help:hover { background: rgba(255,255,255,.14); color: #fff; }
+
+/* ── 使用說明書 Modal ── */
+.help-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(58,46,30,.55); z-index: 9000;
+  align-items: flex-start; justify-content: center; padding: 32px 16px; overflow-y: auto;
+}
+.help-overlay.open { display: flex; }
+.help-modal { background: #fff; border-radius: var(--radius); width: 100%; max-width: 760px; margin: auto; box-shadow: 0 24px 64px rgba(0,0,0,.28); overflow: hidden; }
+.help-modal-head {
+  background: linear-gradient(135deg, var(--wood) 0%, var(--wood-dark) 100%);
+  color: #fff; padding: 20px 26px; display: flex; justify-content: space-between; align-items: flex-start;
+}
+.help-modal-head h2 { font-size: 17px; font-weight: 700; }
+.help-modal-head p { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 3px; }
+.help-close {
+  background: rgba(255,255,255,.14); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%;
+  cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background .15s;
+}
+.help-close:hover { background: rgba(255,255,255,.28); }
+.help-body { padding: 22px 26px 30px; display: flex; flex-direction: column; gap: 24px; max-height: 75vh; overflow-y: auto; }
+.help-section { display: flex; flex-direction: column; gap: 9px; }
+.help-section-title {
+  font-size: 12.5px; font-weight: 700; color: var(--amber-dark); letter-spacing: .05em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 7px; padding-bottom: 7px; border-bottom: 1.5px solid var(--border);
+}
+.help-row { display: flex; gap: 11px; align-items: flex-start; padding: 10px 13px; background: var(--surface2); border-radius: 9px; border: 1px solid var(--border); }
+.help-row-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 1px; background: var(--amber-light); }
+.help-row-content { flex: 1; }
+.help-row-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.help-row-desc { font-size: 12px; color: var(--text2); line-height: 1.7; }
+.help-row-desc b { color: var(--text); }
+.help-row-desc code { background: var(--border); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.help-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 6px; }
+.help-steps li { counter-increment: step; display: flex; gap: 10px; font-size: 12.5px; color: var(--text2); line-height: 1.6; }
+.help-steps li::before {
+  content: counter(step); flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--green); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.help-tip { background: var(--amber-light); border: 1px solid #F0D9A0; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #7A5A1E; line-height: 1.7; }
+.help-tip b { color: var(--amber-dark); }
+.help-tip.warn { background: var(--red-light); border-color: #EAB3A9; color: #8a3a2e; }
+.help-tip.warn b { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="rocket">🚀</span>
+  <div>
+    <h1>EasyGo 訂購自動化</h1>
+    <p>be2 抓單 → EasyGo 下單付款 → 回填憑證，一鍵出發</p>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-help" onclick="openHelp()">📖 使用說明</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>🪪 你的 be2 帳號</h2>
+    <div class="login-row">
+      <div class="field">
+        <label>帳號</label>
+        <input type="text" id="be2User" placeholder="you@kkday.com" />
+      </div>
+      <div class="field">
+        <label>密碼</label>
+        <input type="password" id="be2Pass" />
+      </div>
+      <label class="remember"><input type="checkbox" id="rememberUser" /> 記住帳號（不記密碼）</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 KKday 訂單編號</h2>
+    <textarea id="orderIds" placeholder="26KK280740293&#10;26KK280740294"></textarea>
+    <p class="hint">每行一個訂單編號，一次可貼多筆（批次處理，單筆失敗不影響其他筆）。</p>
+    <div class="actions-row">
+      <button id="runBtn" class="btn-run">🚀 開始執行</button>
+      <button id="exportBtn" class="btn-export" disabled>📊 下載 Excel</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div id="results"></div>
+
+</div>
+
+<!-- ── 使用說明書 Modal ── -->
+<div class="help-overlay" id="help-overlay" onclick="if(event.target===this)closeHelp()">
+  <div class="help-modal">
+    <div class="help-modal-head">
+      <div>
+        <h2>🚀 EasyGo 訂購自動化 使用說明書</h2>
+        <p>be2 抓單 → EasyGo 下單付款 → 回填憑證 · 操作指南</p>
+      </div>
+      <button class="help-close" onclick="closeHelp()">✕</button>
+    </div>
+    <div class="help-body">
+
+      <div class="help-section">
+        <div class="help-section-title">⚙️ 開始前準備</div>
+        <div class="help-row">
+          <div class="help-row-icon">🪪</div>
+          <div class="help-row-content">
+            <div class="help-row-title">你的 be2 帳號 / 密碼</div>
+            <div class="help-row-desc">每個人用<b>自己的</b> be2 帳密登入，不共用同一組。勾選「記住帳號」後重整頁面會自動帶入帳號（<b>密碼不會被記住</b>，每次都要重新輸入）。</div>
+          </div>
+        </div>
+        <div class="help-row">
+          <div class="help-row-icon">🔑</div>
+          <div class="help-row-content">
+            <div class="help-row-title">EasyGo 供應商帳號</div>
+            <div class="help-row-desc">EasyGo（供應商平台）用的是公司共用帳號，已經設定在程式的 <code>.env</code> 檔案裡，不用在網頁上填，也不需要每個人申請一組。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📋 怎麼使用</div>
+        <ol class="help-steps">
+          <li>填好你的 be2 帳號密碼</li>
+          <li>把要訂購的 KKday 訂單編號貼進文字框，<b>一行一筆</b>，可以一次貼很多筆（批次處理）</li>
+          <li>按「🚀 開始執行」，會跳出 Chrome 視窗讓你全程看著跑，不用手動操作</li>
+          <li>每一筆都會顯示結果卡片：<span class="badge success" style="font-size:10px">成功</span> <span class="badge skipped" style="font-size:10px">中止</span> <span class="badge failed" style="font-size:10px">失敗</span>，點開可以看詳細執行過程</li>
+          <li>全部跑完後可以按「📊 下載 Excel」，匯出這批的執行紀錄</li>
+        </ol>
+        <div class="help-tip">💡 批次處理時，單筆訂單失敗或中止<b>不會影響其他筆</b>，會繼續往下跑完剩下的訂單。</div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">🔄 執行邏輯與步驟</div>
+        <div class="help-row">
+          <div class="help-row-icon">1️⃣</div>
+          <div class="help-row-content">
+            <div class="help-row-title">be2 端：抓資料 + 領單</div>
+            <div class="help-row-desc">登入 be2 → 開啟訂單 → 讀取導覽語系、出發日期、訂單總成本、旅客人數、旅客姓名、訂購人資料、旅客備註 → 點擊「OP領取鍵」→「已訂出待供應商回覆」。</div>
+          </div>
+        </div>
+        <div class="help-row">
+          <div class="help-row-icon">2️⃣</div>
+          <div class="help-row-content">
+            <div class="help-row-title">EasyGo 端：下單 + 付款</div>
+            <div class="help-row-desc">登入 EasyGo → 用固定商品ID開商品確認頁 → 選日期 = be2 出發日期 → 類別固定選「30%」、依人數填數量 → 系統算出的結算金額<b>須與 be2 訂單總成本一致</b>才會繼續 → 填確認信箱（固定 op-ib@kkday.com）、簡体中文、游客姓名/手機/國籍/緊急聯絡（固定 X）→ 內部備註填入 KKday 訂單編號 → 提交訂單 → 立即支付。</div>
+          </div>
+        </div>
+        <div class="help-row">
+          <div class="help-row-icon">3️⃣</div>
+          <div class="help-row-content">
+            <div class="help-row-title">be2 端：回填憑證</div>
+            <div class="help-row-desc">回 be2「發送Voucher」分頁 → 填入 EasyGo 訂單ID → 產生 KKday 憑證 → 寄送 Voucher 給旅客 → 標記「已寄出Voucher」→ 這筆訂單完成！</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">⚠️ 注意事項</div>
+        <div class="help-tip warn">
+          <b>不要對同一張已經下單付款過的訂單重複執行。</b>EasyGo 下單目前沒有防重複下單機制，同一張 KKday 訂單如果已經在 EasyGo 建立過訂單，再跑一次會產生第二筆重複訂單（重複扣款）。
+        </div>
+        <div class="help-tip">
+          「導覽語系」非 zh-tw、「旅客備註」有內容，<b>都不會中止流程</b>，還是會正常送出訂單，只會把這兩項實際值記錄在執行紀錄跟 Excel 匯出裡，供你事後回顧（旅客備註內容不會被帶入 EasyGo 訂單，因為 EasyGo 表單本身沒有對應欄位）。
+        </div>
+        <div class="help-tip">
+          金額比對只在「填人數」那一步做一次，跟 be2「訂單總成本」不一致就會中止該筆並記錄原因；付款頁不再重複比對。
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function openHelp(){ document.getElementById('help-overlay').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeHelp(){ document.getElementById('help-overlay').classList.remove('open'); document.body.style.overflow=''; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+</script>
+
+<script>
+const runBtn = document.getElementById('runBtn');
+const exportBtn = document.getElementById('exportBtn');
+const summaryEl = document.getElementById('summary');
+const resultsEl = document.getElementById('results');
+const be2UserEl = document.getElementById('be2User');
+const rememberUserEl = document.getElementById('rememberUser');
+
+if (localStorage.getItem('remember_be2_user') === '1') {
+  rememberUserEl.checked = true;
+  be2UserEl.value = localStorage.getItem('be2_user') || '';
+}
+rememberUserEl.addEventListener('change', () => {
+  if (rememberUserEl.checked) {
+    localStorage.setItem('remember_be2_user', '1');
+    localStorage.setItem('be2_user', be2UserEl.value);
+  } else {
+    localStorage.removeItem('remember_be2_user');
+    localStorage.removeItem('be2_user');
+  }
+});
+be2UserEl.addEventListener('input', () => {
+  if (rememberUserEl.checked) localStorage.setItem('be2_user', be2UserEl.value);
+});
+
+let lastResults = [];
+
+runBtn.addEventListener('click', async () => {
+  const orderIds = document.getElementById('orderIds').value;
+  const be2User = be2UserEl.value.trim();
+  const be2Pass = document.getElementById('be2Pass').value;
+  if (!be2User || !be2Pass) {
+    summaryEl.innerHTML = `<div class="error-banner">請先輸入你的 be2 帳號密碼</div>`;
+    return;
+  }
+  runBtn.disabled = true;
+  exportBtn.disabled = true;
+  runBtn.textContent = '🚀 執行中...';
+  summaryEl.textContent = '';
+  resultsEl.innerHTML = '';
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_ids: orderIds, be2_username: be2User, be2_password: be2Pass }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      summaryEl.innerHTML = `<div class="error-banner">${data.error}</div>`;
+      return;
+    }
+    lastResults = data.results;
+    exportBtn.disabled = lastResults.length === 0;
+    const s = data.summary;
+    summaryEl.innerHTML = `共 ${s.total} 筆：<span class="n-ok">成功 ${s.succeeded}</span>，<span class="n-skip">中止 ${s.skipped}</span>，<span class="n-fail">失敗 ${s.failed}</span>`;
+    data.results.forEach(r => {
+      const div = document.createElement('div');
+      const kind = r.success ? 'success' : (r.skipped ? 'skipped' : 'failed');
+      const icon = r.success ? '✅' : (r.skipped ? '⏸️' : '❌');
+      const badgeText = r.success ? '成功' : (r.skipped ? '中止' : '失敗');
+      div.className = `order-block ${kind}`;
+      const extra = r.easygo_order_id ? `EasyGo訂單ID: ${r.easygo_order_id}` : (r.reason || r.error || '');
+      div.innerHTML = `
+        <div class="card-head">
+          <span>${icon}</span>
+          <span class="order-id">${r.order_id}</span>
+          <span class="badge ${kind}">${badgeText}</span>
+          <span class="extra-info">${extra}</span>
+        </div>
+        <div class="log-body"></div>
+      `;
+      const body = div.querySelector('.log-body');
+      (r.progress || []).forEach(p => {
+        const line = document.createElement('div');
+        line.className = `log-line ${p.status}`;
+        line.textContent = p.msg;
+        body.appendChild(line);
+      });
+      resultsEl.appendChild(div);
+    });
+  } catch (e) {
+    summaryEl.innerHTML = `<div class="error-banner">請求失敗：${e}</div>`;
+  } finally {
+    runBtn.disabled = false;
+    runBtn.textContent = '🚀 開始執行';
+  }
+});
+
+exportBtn.addEventListener('click', async () => {
+  if (!lastResults.length) return;
+  exportBtn.disabled = true;
+  exportBtn.textContent = '📊 匯出中...';
+  try {
+    const res = await fetch('/api/export_results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ results: lastResults }),
+    });
+    if (!res.ok) throw new Error('匯出失敗');
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/);
+    const plainMatch = disposition.match(/filename="?([^";]+)"?/);
+    const filename = utf8Match ? decodeURIComponent(utf8Match[1]) : (plainMatch ? plainMatch[1] : 'EasyGo訂購執行紀錄.xlsx');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert(`匯出失敗：${e}`);
+  } finally {
+    exportBtn.disabled = false;
+    exportBtn.textContent = '📊 下載 Excel';
+  }
+});
+</script>
+</body>
+</html>
