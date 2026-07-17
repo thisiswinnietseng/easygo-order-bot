@@ -11,7 +11,7 @@ from openpyxl import Workbook
 
 from automation import discover_order_candidates, run_single_order
 
-load_dotenv(os.path.expanduser('~/easygo-order-bot/.env'))
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
